@@ -5,6 +5,8 @@ import * as fs from 'fs';
 import { SupervisorCtl } from "./SupervisorCtl";
 import { server_config } from "./server_config";
 import { assert } from "console";
+import { exec, execSync } from "child_process"
+// const exec = require("child_process").exec;
 
 console.log("Monitor starting...");
 
@@ -105,51 +107,77 @@ server.get("/service/status", (req: restify.Request, res: restify.Response, next
 });
 
 
-const getValidatorInfo = async (rest_url: string, pubkey : string) => {
+const getValidatorInfo = async (rest_url: string, pubkey: string) => {
     const url = `${rest_url}/eth/v1/beacon/states/finalized/validators/${pubkey}`
     // console.log(url)
     try {
         const data = await axios.get(url)
         if (!data.data)
-        return null
-        
+            return null
+
         const info = data.data.data
         assert(info.validator.pubkey === pubkey)
         return {
-            index : info.index,
-            pubkey : pubkey,
+            index: info.index,
+            pubkey: pubkey,
             status: info.status,
             withdrawal_credentials: info.validator.withdrawal_credentials
         }
 
-    } catch(e) {
+    } catch (e) {
         return null
     }
 
 }
 
-server.get("/prysm/:network/validatorsinfo",  async (req: restify.Request, res: restify.Response, next: restify.Next) => {
+server.get("/:client/:network/validatorsinfo", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
+    const client = req.params?.client ?? "teku";
     const network = req.params?.network ?? "prater";
-    const validator_url = (network: string) => ({
-        "prater": "http://eth2validator-prater.my.ava.do",
-        "mainnet": "http://eth2validator.my.ava.do",
-    })[network] || "http://eth2validator.my.ava.do"
-
-    const rest_url = (network: string) => `http://prysm-beacon-chain-${network}.my.ava.do:3500`
     
-    const validatorAPI = (network: string) => validator_url(network) + ":7500"
+    const validator_url = () => {
+        switch (client) {
+            case "prysm": switch (network) {
+                case "prater": return "http://eth2validator-prater.my.ava.do"
+                case "mainnet": return "http://eth2validator.my.ava.do"
+            }
+            case "teku": switch (network) {
+                case "prater": return "http://teku-prater.my.ava.do"
+                case "mainnet": return "http://teku.my.ava.do"
+            }
+        }
+    }
 
-    const token_url = `${validator_url(network)}:81/auth-token.txt`
+    const rest_url = () => {
+        switch (client) {
+            case "prysm": return `http://prysm-beacon-chain-${network}.my.ava.do:3500`
+            default: return validator_url() + ":5051"
+        }
+    }
 
-    const token = (await axios.get(token_url)).data.trim()
+    const validatorAPI = () => {
+        switch (client) {
+            case "prysm": return validator_url() + ":7500"
+            case "teku": return validator_url() + ":5052"
+        }
+    }
+
+    const token_url = () => {
+        switch (client) {
+            case "prysm": return `${validator_url()}:81/auth-token.txt`
+            default: return `${validator_url()}:81/auth-token.txt`
+        }
+    }
+    
+
+    const token = (await axios.get(token_url())).data.trim()
 
     // console.log(token)
 
-    const keystores_url: string = `${validatorAPI(network)}/eth/v1/keystores`;
+    const keystores_url: string = `${validatorAPI()}/eth/v1/keystores`;
 
     // console.log(keystores_url)
 
-    const data  = await axios.get(keystores_url, {
+    const data = await axios.get(keystores_url, {
         headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`
@@ -157,15 +185,74 @@ server.get("/prysm/:network/validatorsinfo",  async (req: restify.Request, res: 
     }).then((res) => res.data);
 
     // console.log(data)
-    
 
-    const validators = await Promise.all(data.data.map((d: any) => getValidatorInfo(rest_url(network), d.validating_pubkey)))
-    
+
+    const validators = await Promise.all(data.data.map((d: any) => getValidatorInfo(rest_url(), d.validating_pubkey)))
+
     const filtered_validators = validators.filter(x => !!x)
     res.send(200, filtered_validators)
     next();
 });
 
+
+server.post("/derive_addresses", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
+    // if (!req.is('json')) {
+    //     return next(new restify.errors.UnsupportedMediaTypeError('content-type: application/json required'));
+    // }
+    const body = req.body
+    const mnemonic = body.mnemonic
+    const amount = body.amount ?? 3
+
+    // const connection = "http://prysm-beacon-chain-prater.my.ava.do:3500"
+    const connection = "http://172.33.0.7:3500"
+    const extra_params = `--connection ${connection} --allow-insecure-connections`
+    const ethdo = "/Users/heeckhau/git/avado-daps/AVADO-SSV-Ethdo/build/monitor/ethdo"
+
+    const derive_address = (path: string) => {
+        const stdout = execSync(`${ethdo} account derive --mnemonic="${mnemonic}" --path="${path}" ${extra_params}`)
+        const matches = stdout.toString().match(/Public key: (.*)/)
+        if (matches) {
+            return matches[1]
+        }
+    }
+
+    const addresses_3 = [...Array(amount)].map((_, i) => derive_address(`m/12381/3600/${i}/0/0`))
+    const addresses_2 = [...Array(amount)].map((_, i) => derive_address(`m/12381/3600/${i}/0`))
+
+    const addresses = addresses_3.concat(addresses_2);
+    console.log(addresses)
+
+    res.send(200, addresses)
+    next();
+});
+
+server.post("/set_credentials", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
+    const mnemonic = req.body.mnemonic
+    const validator_index = req.body.validator_index
+    const withdrawal_address = req.body.withdrawal_address
+
+    // console.log(mnemonic)
+    // console.log(validator_index)
+    // console.log(withdrawal_address)
+    console.log(`Setting withdrawal credentials of validator ${validator_index} to ${withdrawal_address}`)
+
+    // const connection = "http://prysm-beacon-chain-prater.my.ava.do:3500"
+    const connection = "http://172.33.0.7:3500"
+    const extra_params = `--connection ${connection} --allow-insecure-connections`
+    const ethdo = "/Users/heeckhau/git/avado-daps/AVADO-SSV-Ethdo/build/monitor/ethdo"
+
+    const cmd = `${ethdo} validator credentials set --mnemonic="${mnemonic}" --validator="${validator_index}" --withdrawal-address="${withdrawal_address}" ${extra_params}`
+
+    try {
+        const stdout = execSync(cmd)
+        res.send(200, "success")
+        next();
+    } catch (e: any) {
+        // console.log(e.stderr.toString())
+        res.send(500, e.stderr.toString().trim())
+        next();
+    }
+});
 
 /////////////////////////////
 // Beacon chain rest API   //

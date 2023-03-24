@@ -5,7 +5,9 @@ import styles from '../styles/Home.module.css';
 import { useAccount } from 'wagmi';
 import { useValidators } from '../hooks/useValidators';
 import { network } from "../types";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { utils } from 'ethers';
+import axios from 'axios';
 
 const Home: NextPage = () => {
 
@@ -23,8 +25,8 @@ const Home: NextPage = () => {
       case "active_ongoing": return "is-success" // When validator must be attesting, and have not initiated any exit.
       case "active_exiting": return "is-warning" // When validator is still active, but filed a voluntary request to exit.
       case "active_slashed": return "is-danger"// When validator is still active, but have a slashed status and is scheduled to exit.
-      case "exited_unslashed": return "is-info"// When validator has reached reguler exit epoch, not being slashed, and doesn't have to attest any more, but cannot withdraw yet.
-      case "exited_slashed": return "is-danger"// When validator has reached reguler exit epoch, but was slashed, have to wait for a longer withdrawal period.
+      case "exited_unslashed": return "is-info"// When validator has reached regular exit epoch, not being slashed, and doesn't have to attest any more, but cannot withdraw yet.
+      case "exited_slashed": return "is-danger"// When validator has reached regular exit epoch, but was slashed, have to wait for a longer withdrawal period.
       case "withdrawal_possible": return "is-info"// After validator has exited, a while later is permitted to move funds, and is truly out of the system.
       case "withdrawal_done": return "is-info"// (not possible in phase0, except slashing full balance)// actually having moved funds away
       default: return ""
@@ -36,9 +38,54 @@ const Home: NextPage = () => {
     : <span className={"tag is-danger"}>TODO set withdrawal address</span>
 
   useEffect(() => {
-    if (data)
-      console.dir(data[0].index)
+    // if (data)
+    //   console.dir(data[0].index)
   }, [data]);
+
+  const [mnemonic, setMnemonic] = useState<string>("");
+
+  const [supportedAddresses, setSupportedAddresses] = useState<string[]>([]);
+  const [credentialsFeedback, setCredentialsFeedback] = useState<string>("");
+
+  useEffect(() => {
+    if (mnemonic && data?.length > 0 && utils.isValidMnemonic(mnemonic)) {
+      const supported_addresses = axios.post(`http://localhost:9999/derive_addresses`, {
+        mnemonic: mnemonic,
+        amount: data.length
+      }
+      ).then((res) => {
+        console.log(res.data)
+        const result = res.data
+        setSupportedAddresses(result)
+      });
+
+    }
+  }, [mnemonic, data]);
+
+  const validMnemonic = () => utils.isValidMnemonic(mnemonic)
+
+  const filterValidatorByMnemonic = (validators: any, supported_addresses: string[]) => {
+    // console.log("VA", validators)
+    // console.log("SA", supported_addresses)
+    return validators.filter((value: any) => supported_addresses.includes(value.pubkey));
+  }
+
+  const set_credentials = (validator: any) => {
+    setCredentialsFeedback("")
+    axios.post(`http://localhost:9999/set_credentials`,
+      {
+        validator_index: validator.index,
+        mnemonic: mnemonic,
+        withdrawal_address: address
+      })
+      .then(res => {
+        console.dir(res.data)
+        setCredentialsFeedback(res.data)
+      })
+      .catch(e => {
+        setCredentialsFeedback(e.response.data)
+      })
+  }
 
   return (
     <div className={styles.container}>
@@ -52,18 +99,64 @@ const Home: NextPage = () => {
 
       <main className={styles.main}>
 
-        <h1 className="title is-1">Avado Convert BLS withdrawal credentials</h1>
+        <div className="App">
+          <section className="hero is-default is-bold">
+            <div className="hero-body">
+              <div className="container has-text-centered ">
+                <div className="columns is-vcentered">
+                  <div className="column  is-6 is-offset-1">
+                    <h1 className="title is-1">Avado Convert BLS withdrawal credentials</h1>
 
-        {data && (
-          <ul>
-            {data.map((v: any, index: number) =>
-              <li key={index}>
-                {v.index}, {trim_pubkey(v.pubkey)}, <span className={"tag " + getStatusColor(v.status)}>{v.status}</span>, {withdrawaladdress_tag(v.withdrawal_credentials)}
-              </li>
-            )}
-          </ul>
-        )}
+                    <h2 className="title is-2">Your validators</h2>
 
+                    {data && (
+                      <ul>
+                        {data.map((v: any, index: number) =>
+                          <li key={index}>
+                            {v.index}, {trim_pubkey(v.pubkey)}, <span className={"tag " + getStatusColor(v.status)}>{v.status}</span>, {withdrawaladdress_tag(v.withdrawal_credentials)}
+                          </li>
+                        )}
+                      </ul>
+                    )}
+
+                    <h2 className="title is-2">Your mnemonic</h2>
+                    <div>
+                      <textarea className={"textarea" + (validMnemonic() ? "" : " is-danger")} placeholder="your mnemonic" value={mnemonic} onChange={event => setMnemonic(event.target.value)} />
+                      <label className={"label" + (validMnemonic() ? "" : " is-danger")}>{validMnemonic() ? "valid" : "incorrect"}</label>
+                    </div>
+
+                    <h2 className="title is-2">Your requested withdrawal address</h2>
+                    <div className="column">
+                      <ConnectButton />
+                      {/* TODO: sign message : https://www.rainbowkit.com/docs/authentication */}
+                    </div>
+
+                    <h2 className="title is-2">Set validator credentials</h2>
+                    <div>
+                      {supportedAddresses && data && (
+
+                        <ul>
+                          {filterValidatorByMnemonic(data, supportedAddresses)
+                            .filter((v: any) => (v.withdrawal_credentials.startsWith("0x00")))
+                            .map((v: any, index: number) =>
+                              <>
+                                <li key={index}>
+                                  {v.index}, {trim_pubkey(v.pubkey)} <button className="button" onClick={() => set_credentials(v)}>Set withdrawal_address</button>
+                                </li>
+                              </>
+                            )}
+                        </ul>
+                      )}
+                      {credentialsFeedback && (
+                        <label className={"label"}>{JSON.stringify(credentialsFeedback)}</label>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
       </main>
 
       <footer className={styles.footer}>
