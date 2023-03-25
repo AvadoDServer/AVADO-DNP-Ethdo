@@ -1,9 +1,0 @@
-db:
-  Path: /data/db
-eth2:
-  Network: "prater"
-  BeaconNodeAddr: "http://prysm-beacon-chain-prater.my.ava.do:3500"
-eth1:
-  ETH1Addr: ws://nethermind-goerli.my.ava.do:8545
-  RegistryContractAddr: "0xb9e155e65b5c4d66df28da8e9a0957f06f11bc04"
-OperatorPrivateKey: ""

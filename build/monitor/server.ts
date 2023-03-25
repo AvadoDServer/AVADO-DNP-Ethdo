@@ -1,12 +1,15 @@
 import * as restify from "restify";
 import corsMiddleware from "restify-cors-middleware2"
 import axios, { Method, AxiosRequestHeaders } from "axios";
-import * as fs from 'fs';
 import { SupervisorCtl } from "./SupervisorCtl";
 import { server_config } from "./server_config";
 import { assert } from "console";
 import { exec, execSync } from "child_process"
-// const exec = require("child_process").exec;
+import { rest_url, validatorAPI, getAvadoPackageName, getTokenPathInContainer } from "./urls";
+import { DappManagerHelper } from "./DappManagerHelper";
+const autobahn = require('autobahn');
+
+const supported_clients = ["prysm", "teku"];
 
 console.log("Monitor starting...");
 
@@ -106,6 +109,41 @@ server.get("/service/status", (req: restify.Request, res: restify.Response, next
         });
 });
 
+let wampSession: any = null;
+{
+    const url = "ws://wamp.my.ava.do:8080/ws";
+    const realm = "dappnode_admin";
+
+    const connection = new autobahn.Connection({ url, realm });
+    connection.onopen = (session: any) => {
+        console.log("CONNECTED to \nurl: " + url + " \nrealm: " + realm);
+        wampSession = session;
+    };
+    connection.open();
+}
+
+const getInstalledClients = async () => {
+    const packageName = "ethdo.avado.dnp.dappnode.eth";
+    const dappManagerHelper = new DappManagerHelper(packageName, wampSession);
+    const packages = await dappManagerHelper.getPackages();
+
+    const installed_clients = supported_clients.filter(client => packages.includes(getAvadoPackageName(client, "beaconchain"))
+        && packages.includes(getAvadoPackageName(client, "validator"))
+    );
+    return installed_clients;
+}
+
+server.get("/clients", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
+    res.send(200, await getInstalledClients())
+    next();
+})
+
+type ValidatorInfo = {
+    index: number,
+    pubkey: string,
+    status: string,
+    withdrawal_credentials: string
+}
 
 const getValidatorInfo = async (rest_url: string, pubkey: string) => {
     const url = `${rest_url}/eth/v1/beacon/states/finalized/validators/${pubkey}`
@@ -117,80 +155,46 @@ const getValidatorInfo = async (rest_url: string, pubkey: string) => {
 
         const info = data.data.data
         assert(info.validator.pubkey === pubkey)
+        // console.log(info.validator.pubkey)
         return {
             index: info.index,
             pubkey: pubkey,
             status: info.status,
             withdrawal_credentials: info.validator.withdrawal_credentials
-        }
+        } as ValidatorInfo
 
     } catch (e) {
         return null
     }
-
 }
 
-server.get("/:client/:network/validatorsinfo", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    const client = req.params?.client ?? "teku";
-    const network = req.params?.network ?? "prater";
-    
-    const validator_url = () => {
-        switch (client) {
-            case "prysm": switch (network) {
-                case "prater": return "http://eth2validator-prater.my.ava.do"
-                case "mainnet": return "http://eth2validator.my.ava.do"
+server.get("/validatorsinfo", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
+    const installed_clients = await getInstalledClients()
+
+    const validatorsinfo = await Promise.all(installed_clients.map(async (client) => {
+        console.log(`fetching validators info from ${client}`)
+
+        const dappManagerHelper = new DappManagerHelper(getAvadoPackageName(client, "validator"), wampSession);
+        const path = getTokenPathInContainer(client);
+        const file = await dappManagerHelper.getFileContentFromContainer(path);
+        const token = file?.trim();
+        
+        const data = await axios.get(`${validatorAPI(client)}/eth/v1/keystores`, {
+            headers: {
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`
             }
-            case "teku": switch (network) {
-                case "prater": return "http://teku-prater.my.ava.do"
-                case "mainnet": return "http://teku.my.ava.do"
-            }
-        }
-    }
+        }).then((res) => res.data);
+        
+        // console.log(data)
+        const pubKeys: string[] = data.data.map((d: any) => d.validating_pubkey);
 
-    const rest_url = () => {
-        switch (client) {
-            case "prysm": return `http://prysm-beacon-chain-${network}.my.ava.do:3500`
-            default: return validator_url() + ":5051"
-        }
-    }
+        const validators = await Promise.all(pubKeys.map(pubKey => getValidatorInfo(rest_url(client), pubKey)))
+                
+        return (validators.filter(x => !!x)) as ValidatorInfo[];
+    }))
 
-    const validatorAPI = () => {
-        switch (client) {
-            case "prysm": return validator_url() + ":7500"
-            case "teku": return validator_url() + ":5052"
-        }
-    }
-
-    const token_url = () => {
-        switch (client) {
-            case "prysm": return `${validator_url()}:81/auth-token.txt`
-            default: return `${validator_url()}:81/auth-token.txt`
-        }
-    }
-    
-
-    const token = (await axios.get(token_url())).data.trim()
-
-    // console.log(token)
-
-    const keystores_url: string = `${validatorAPI()}/eth/v1/keystores`;
-
-    // console.log(keystores_url)
-
-    const data = await axios.get(keystores_url, {
-        headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`
-        }
-    }).then((res) => res.data);
-
-    // console.log(data)
-
-
-    const validators = await Promise.all(data.data.map((d: any) => getValidatorInfo(rest_url(), d.validating_pubkey)))
-
-    const filtered_validators = validators.filter(x => !!x)
-    res.send(200, filtered_validators)
+    res.send(200, validatorsinfo.flat())
     next();
 });
 
@@ -245,7 +249,7 @@ server.post("/set_credentials", async (req: restify.Request, res: restify.Respon
 
     try {
         const stdout = execSync(cmd)
-        res.send(200, "success")
+        res.send(200, stdout.toString().trim() || "success")
         next();
     } catch (e: any) {
         // console.log(e.stderr.toString())
@@ -254,60 +258,37 @@ server.post("/set_credentials", async (req: restify.Request, res: restify.Respon
     }
 });
 
-/////////////////////////////
-// Beacon chain rest API   //
-/////////////////////////////
+server.post("/get_credentials", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
+    const mnemonic = req.body.mnemonic
+    const validator_index = req.body.validator_index
+    const withdrawal_address = req.body.withdrawal_address
 
-server.get('/rest/*', (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    const path = req.params["*"]
-    const url = `${server_config.rest_url}/${path}`
-    const headers = {
-        'Content-Type': 'application/json'
+    // console.log(mnemonic)
+    // console.log(validator_index)
+    // console.log(withdrawal_address)
+    console.log(`Setting withdrawal credentials of validator ${validator_index} to ${withdrawal_address}`)
+
+    // const connection = "http://prysm-beacon-chain-prater.my.ava.do:3500"
+    // const connection = "http://172.33.0.7:3500"
+
+    // const connection = "http://teku-prater.my.ava.do:5051"
+    const connection = "http://172.33.0.5:5051"
+
+    const extra_params = `--connection ${connection} --allow-insecure-connections`
+    const ethdo = "/Users/heeckhau/git/avado-daps/AVADO-SSV-Ethdo/build/monitor/ethdo"
+
+    const cmd = `${ethdo} validator credentials set --mnemonic="${mnemonic}" --validator="${validator_index}" --withdrawal-address="${withdrawal_address}" ${extra_params}`
+
+    try {
+        const stdout = execSync(cmd)
+        res.send(200, stdout.toString().trim() || "success")
+        next();
+    } catch (e: any) {
+        // console.log(e.stderr.toString())
+        res.send(500, e.stderr.toString().trim())
+        next();
     }
-    axiosRequest(
-        url,
-        headers,
-        req,
-        res,
-        next
-    )
 });
-
-/////////////////////////////
-// Key manager API         //
-/////////////////////////////
-
-server.get('/keymanager/*', (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    processKeyMangerRequest(req, res, next);
-});
-
-
-server.post('/keymanager/*', (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    processKeyMangerRequest(req, res, next);
-});
-
-server.del('/keymanager/*', (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    processKeyMangerRequest(req, res, next);
-});
-
-const processKeyMangerRequest = (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    const path = req.params["*"]
-    const url = `${server_config.keymanager_url}/${path}`
-    const keymanagertoken = getKeyManagerToken();
-    const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${keymanagertoken}`
-    }
-
-    // console.log(req.body, url, keymanagertoken);
-    axiosRequest(
-        url,
-        headers,
-        req,
-        res,
-        next
-    )
-}
 
 const axiosRequest = (url: string, headers: AxiosRequestHeaders, req: restify.Request, res: restify.Response, next: restify.Next) => {
     axios.request({
@@ -323,14 +304,6 @@ const axiosRequest = (url: string, headers: AxiosRequestHeaders, req: restify.Re
         res.send(500, "failed")
         next();
     });
-}
-
-const getKeyManagerToken = () => {
-    try {
-        return fs.readFileSync(server_config.keymanager_token_path, 'utf8').trim();
-    } catch (err) {
-        console.error(err);
-    }
 }
 
 server.listen(9999, function () {

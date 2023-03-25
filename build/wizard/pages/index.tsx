@@ -13,7 +13,7 @@ const Home: NextPage = () => {
 
   const { isConnected, address } = useAccount()
 
-  const { data: data } = useValidators()
+  const { validators, error: validators_error } = useValidators()
 
   const trim_pubkey = (pubkey: string) => pubkey.substring(0, 6) + "..." + pubkey.substring(pubkey.length - 6)
 
@@ -38,9 +38,9 @@ const Home: NextPage = () => {
     : <span className={"tag is-danger"}>TODO set withdrawal address</span>
 
   useEffect(() => {
-    // if (data)
-    //   console.dir(data[0].index)
-  }, [data]);
+    if (validators)
+      console.dir(validators)
+  }, [validators]);
 
   const [mnemonic, setMnemonic] = useState<string>("");
 
@@ -48,10 +48,10 @@ const Home: NextPage = () => {
   const [credentialsFeedback, setCredentialsFeedback] = useState<string>("");
 
   useEffect(() => {
-    if (mnemonic && data?.length > 0 && utils.isValidMnemonic(mnemonic)) {
+    if (mnemonic && validators?.length > 0 && utils.isValidMnemonic(mnemonic)) {
       const supported_addresses = axios.post(`http://localhost:9999/derive_addresses`, {
         mnemonic: mnemonic,
-        amount: data.length
+        amount: validators.length
       }
       ).then((res) => {
         console.log(res.data)
@@ -60,9 +60,11 @@ const Home: NextPage = () => {
       });
 
     }
-  }, [mnemonic, data]);
+  }, [mnemonic, validators]);
 
   const validMnemonic = () => utils.isValidMnemonic(mnemonic)
+
+  const cleanUpMnemonicInput = (rawMnemonic:string) => rawMnemonic.trim().split(/\s+/).join(" ")
 
   const filterValidatorByMnemonic = (validators: any, supported_addresses: string[]) => {
     // console.log("VA", validators)
@@ -107,11 +109,10 @@ const Home: NextPage = () => {
                   <div className="column  is-6 is-offset-1">
                     <h1 className="title is-1">Avado Convert BLS withdrawal credentials</h1>
 
-                    <h2 className="title is-2">Your validators</h2>
-
-                    {data && (
+                    <h2 className="title is-2">Your validators that need their withdrawal address set</h2>
+                    {validators && (
                       <ul>
-                        {data.map((v: any, index: number) =>
+                        {validators.filter((v:any)=>v.withdrawal_credentials.startsWith("0x00")).map((v: any, index: number) =>
                           <li key={index}>
                             {v.index}, {trim_pubkey(v.pubkey)}, <span className={"tag " + getStatusColor(v.status)}>{v.status}</span>, {withdrawaladdress_tag(v.withdrawal_credentials)}
                           </li>
@@ -121,7 +122,7 @@ const Home: NextPage = () => {
 
                     <h2 className="title is-2">Your mnemonic</h2>
                     <div>
-                      <textarea className={"textarea" + (validMnemonic() ? "" : " is-danger")} placeholder="your mnemonic" value={mnemonic} onChange={event => setMnemonic(event.target.value)} />
+                      <textarea className={"textarea" + (validMnemonic() ? "" : " is-danger")} placeholder="your mnemonic" /*value={mnemonic}*/ onChange={event => setMnemonic(cleanUpMnemonicInput(event.target.value))} />
                       <label className={"label" + (validMnemonic() ? "" : " is-danger")}>{validMnemonic() ? "valid" : "incorrect"}</label>
                     </div>
 
@@ -133,10 +134,10 @@ const Home: NextPage = () => {
 
                     <h2 className="title is-2">Set validator credentials</h2>
                     <div>
-                      {supportedAddresses && data && (
+                      {supportedAddresses && validators && (
 
                         <ul>
-                          {filterValidatorByMnemonic(data, supportedAddresses)
+                          {filterValidatorByMnemonic(validators, supportedAddresses)
                             .filter((v: any) => (v.withdrawal_credentials.startsWith("0x00")))
                             .map((v: any, index: number) =>
                               <>
@@ -151,6 +152,17 @@ const Home: NextPage = () => {
                         <label className={"label"}>{JSON.stringify(credentialsFeedback)}</label>
                       )}
                     </div>
+
+                    <h2 className="title is-2">Your validators with withdrawal address already set</h2>
+                    {validators && (
+                      <ul>
+                        {validators.filter((v:any)=>v.withdrawal_credentials.startsWith("0x01")).map((v: any, index: number) =>
+                          <li key={index}>
+                            {v.index}, {trim_pubkey(v.pubkey)}, <span className={"tag " + getStatusColor(v.status)}>{v.status}</span>, {withdrawaladdress_tag(v.withdrawal_credentials)}
+                          </li>
+                        )}
+                      </ul>
+                    )}
                   </div>
                 </div>
               </div>
