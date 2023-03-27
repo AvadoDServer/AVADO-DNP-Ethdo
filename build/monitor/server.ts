@@ -5,11 +5,12 @@ import { SupervisorCtl } from "./SupervisorCtl";
 import { server_config } from "./server_config";
 import { assert } from "console";
 import { exec, execSync } from "child_process"
-import { rest_url, rest_url_ip, validatorAPI, getAvadoPackageName, getTokenPathInContainer } from "./urls";
+import { rest_url, rest_url_ip, validatorAPI, getAvadoPackageName, getTokenPathInContainer, getAvadoExecutionClientPackageName } from "./urls";
 import { DappManagerHelper } from "./DappManagerHelper";
 const autobahn = require('autobahn');
 
-const supported_clients = ["prysm", "teku"];
+const supported_beacon_chain_clients = ["prysm", "teku"];
+const supported_execution_clients = ["geth", "nethermind"];
 
 console.log("Monitor starting...");
 
@@ -127,7 +128,7 @@ const getInstalledClients = async () => {
     const dappManagerHelper = new DappManagerHelper(packageName, wampSession);
     const packages = await dappManagerHelper.getPackages();
 
-    const installed_clients = supported_clients.filter(client => packages.includes(getAvadoPackageName(client, "beaconchain"))
+    const installed_clients = supported_beacon_chain_clients.filter(client => packages.includes(getAvadoPackageName(client, "beaconchain"))
         && packages.includes(getAvadoPackageName(client, "validator"))
     );
     return installed_clients;
@@ -135,6 +136,22 @@ const getInstalledClients = async () => {
 
 server.get("/clients", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
     res.send(200, await getInstalledClients())
+    next();
+})
+
+server.get("/executionclients", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
+    const packageName = "ethdo.avado.dnp.dappnode.eth";
+    const dappManagerHelper = new DappManagerHelper(packageName, wampSession);
+    const packages = await dappManagerHelper.getPackages();
+
+    const installed_clients = supported_execution_clients.filter(client => packages.includes(getAvadoExecutionClientPackageName(client)));
+
+    res.send(200, installed_clients.map(client => {
+        return {
+            name: client,
+            api: `http://${getAvadoExecutionClientPackageName(client)}:8545`
+        }
+    }))
     next();
 })
 
@@ -176,6 +193,7 @@ server.get("/validatorsinfo", async (req: restify.Request, res: restify.Response
 
         const dappManagerHelper = new DappManagerHelper(getAvadoPackageName(client, "validator"), wampSession);
         const path = getTokenPathInContainer(client);
+
         const file = await dappManagerHelper.getFileContentFromContainer(path);
         const token = file?.trim();
 
@@ -204,8 +222,14 @@ server.post("/derive_addresses", async (req: restify.Request, res: restify.Respo
     const mnemonic = body.mnemonic
     const amount = body.amount ?? 3
 
-    // const connection = "http://prysm-beacon-chain-prater.my.ava.do:3500"
-    const connection = "http://172.33.0.7:3500"
+    const installed_clients = await getInstalledClients()
+
+    if (installed_clients.length < 1) {
+        res.send(500, "No beacon chain running")
+        next();
+    }
+
+    const connection = rest_url_ip(installed_clients[0])
     const extra_params = `--connection ${connection} --allow-insecure-connections`
     const ethdo = "/Users/heeckhau/git/avado-daps/AVADO-SSV-Ethdo/build/monitor/ethdo"
 
@@ -232,13 +256,16 @@ server.post("/set_credentials", async (req: restify.Request, res: restify.Respon
     const validator_index = req.body.validator_index
     const withdrawal_address = req.body.withdrawal_address
 
-    // console.log(mnemonic)
-    // console.log(validator_index)
-    // console.log(withdrawal_address)
+    const installed_clients = await getInstalledClients()
+
+    if (installed_clients.length < 1) {
+        res.send(500, "No beacon chain running")
+        next();
+    }
+
     console.log(`Setting withdrawal credentials of validator ${validator_index} to ${withdrawal_address}`)
 
-    // const connection = "http://prysm-beacon-chain-prater.my.ava.do:3500"
-    const connection = "http://172.33.0.7:3500"
+    const connection = rest_url_ip(installed_clients[0])
     const extra_params = `--connection ${connection} --allow-insecure-connections`
     const ethdo = "/Users/heeckhau/git/avado-daps/AVADO-SSV-Ethdo/build/monitor/ethdo"
 

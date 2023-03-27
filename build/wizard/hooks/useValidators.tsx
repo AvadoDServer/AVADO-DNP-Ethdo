@@ -1,4 +1,5 @@
 import useSWR from "swr";
+import {server_config} from "../server_config"
 
 const get = (api_url: string) => {
     const fetcher = async (url: string) => await fetch(url).then((res) => res.json());
@@ -13,8 +14,7 @@ export type ValidatorInfo = {
 }
 
 export function useValidators() {
-    const network = "prater"
-    const api_url: string = `http://localhost:9999/validatorsinfo`;
+    const api_url: string = `${server_config.monitor_url}/validatorsinfo`;
     // console.log(api_url)
     const { data, error } = get(api_url)
     // console.dir(data)

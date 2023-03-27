@@ -1,4 +1,4 @@
 export const server_config = {
-    "network": "prater",
+    "network": "goerli",
     "name" : "ethdo"
 }

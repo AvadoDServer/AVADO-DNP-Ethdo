@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "upstream": "1.28.5",
   "autoupdate": true,
-  "title": "ethdo.network operator package",
-  "description": "Distributed validator support with ethdo.network",
+  "title": "ethdo operator package",
+  "description": "Distributed validator support with ethdo",
   "avatar": "/ipfs/Qma6Dq8QjhgRbqjHxumG9kLM6YinF4JRvZ9TUD8a3M1Fje",
   "type": "service",
   "image": {

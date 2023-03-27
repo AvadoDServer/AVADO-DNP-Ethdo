@@ -1,1 +1,1 @@
-export type network = 'prater'  | 'mainnet';
+export type network = 'goerli'  | 'mainnet';

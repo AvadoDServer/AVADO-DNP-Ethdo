@@ -3,11 +3,11 @@ import type { NextPage } from 'next';
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
 import { useAccount } from 'wagmi';
-import { useValidators } from '../hooks/useValidators';
-import { network } from "../types";
+import { ValidatorInfo, useValidators } from '../hooks/useValidators';
 import { useEffect, useState } from 'react';
 import { utils } from 'ethers';
 import axios from 'axios';
+import { server_config } from '../server_config';
 
 const Home: NextPage = () => {
 
@@ -33,14 +33,25 @@ const Home: NextPage = () => {
     }
   }
 
-  const withdrawaladdress_tag = (withdrawal_credentials: string) => withdrawal_credentials.startsWith("0x01") ?
-    <span className={"tag is-success"}>withdrawal credentials OK</span>
-    : <span className={"tag is-danger"}>TODO set withdrawal address</span>
+  const createBeaconchainUrl = (validatorPubkey: string, text?: any) => {
+    const beaconChainBaseUrl = ({
+      "goerli": "https://prater.beaconcha.in",
+      "mainnet": "https://beaconcha.in",
+      "gnosis": "https://beacon.gnosischain.com"
+    })[server_config.network ?? "mainnet"]
+    return <a href={beaconChainBaseUrl + "/validator/" + validatorPubkey} target="_blank" rel="noopener noreferrer">{text ? text : validatorPubkey}</a>;
+  }
 
-  useEffect(() => {
-    if (validators)
-      console.dir(validators)
-  }, [validators]);
+  const withdrawaladdress_tag = (validatorInfo: ValidatorInfo) => {
+    // console.log(validatorInfo)
+    const tag = <span className={"tag " + (validatorInfo.withdrawal_credentials.startsWith("0x01") ? "is-success" : "is-warning")}>{validatorInfo.index}</span>
+    return createBeaconchainUrl(validatorInfo.pubkey, tag)
+  }
+
+  // useEffect(() => {
+  //   if (validators)
+  //     console.dir(validators)
+  // }, [validators]);
 
   const [mnemonic, setMnemonic] = useState<string>("");
 
@@ -49,12 +60,12 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     if (mnemonic && validators?.length > 0 && utils.isValidMnemonic(mnemonic)) {
-      const supported_addresses = axios.post(`http://localhost:9999/derive_addresses`, {
+      const supported_addresses = axios.post(`${server_config.monitor_url}/derive_addresses`, {
         mnemonic: mnemonic,
         amount: validators.length
       }
       ).then((res) => {
-        console.log(res.data)
+        // console.log(res.data)
         const result = res.data
         setSupportedAddresses(result)
       });
@@ -64,7 +75,7 @@ const Home: NextPage = () => {
 
   const validMnemonic = () => utils.isValidMnemonic(mnemonic)
 
-  const cleanUpMnemonicInput = (rawMnemonic:string) => rawMnemonic.trim().split(/\s+/).join(" ")
+  const cleanUpMnemonicInput = (rawMnemonic: string) => rawMnemonic.trim().split(/\s+/).join(" ")
 
   const filterValidatorByMnemonic = (validators: any, supported_addresses: string[]) => {
     // console.log("VA", validators)
@@ -74,7 +85,7 @@ const Home: NextPage = () => {
 
   const set_credentials = (validator: any) => {
     setCredentialsFeedback("")
-    axios.post(`http://localhost:9999/set_credentials`,
+    axios.post(`${server_config.monitor_url}/set_credentials`,
       {
         validator_index: validator.index,
         mnemonic: mnemonic,
@@ -107,32 +118,45 @@ const Home: NextPage = () => {
               <div className="container has-text-centered ">
                 <div className="columns is-vcentered">
                   <div className="column  is-6 is-offset-1">
-                    <h1 className="title is-1">Avado Convert BLS withdrawal credentials</h1>
+                    <h1 className="title is-1">Ethereum tools</h1>
+                    <div>
+                      <p>Prepare your validators for the Ethereum Capella hard fork</p>
+                    </div>
 
-                    <h2 className="title is-2">Your validators that need their withdrawal address set</h2>
+                    {validators && (
+                      <div>
+                        <p>Your validators:</p>
+                        <div>
+                          {validators.sort((v1,v2) => v1.index-v2.index).map((v, index) => withdrawaladdress_tag(v))}
+                        </div>
+                      </div>
+                    )}
+
+
+                    <h2 className="title is-4">Your validators that need their withdrawal address set</h2>
                     {validators && (
                       <ul>
-                        {validators.filter((v:any)=>v.withdrawal_credentials.startsWith("0x00")).map((v: any, index: number) =>
+                        {validators.filter((v: any) => v.withdrawal_credentials.startsWith("0x00")).map((v: any, index: number) =>
                           <li key={index}>
-                            {v.index}, {trim_pubkey(v.pubkey)}, <span className={"tag " + getStatusColor(v.status)}>{v.status}</span>, {withdrawaladdress_tag(v.withdrawal_credentials)}
+                            {v.index}, {trim_pubkey(v.pubkey)}, <span className={"tag " + getStatusColor(v.status)}>{v.status}</span>
                           </li>
                         )}
                       </ul>
                     )}
 
-                    <h2 className="title is-2">Your mnemonic</h2>
+                    <h2 className="title is-4">Your mnemonic</h2>
                     <div>
                       <textarea className={"textarea" + (validMnemonic() ? "" : " is-danger")} placeholder="your mnemonic" /*value={mnemonic}*/ onChange={event => setMnemonic(cleanUpMnemonicInput(event.target.value))} />
                       <label className={"label" + (validMnemonic() ? "" : " is-danger")}>{validMnemonic() ? "valid" : "incorrect"}</label>
                     </div>
 
-                    <h2 className="title is-2">Your requested withdrawal address</h2>
+                    <h2 className="title is-4">Your requested withdrawal address</h2>
                     <div className="column">
                       <ConnectButton />
                       {/* TODO: sign message : https://www.rainbowkit.com/docs/authentication */}
                     </div>
 
-                    <h2 className="title is-2">Set validator credentials</h2>
+                    <h2 className="title is-4">Set validator credentials</h2>
                     <div>
                       {supportedAddresses && validators && (
 
@@ -152,17 +176,6 @@ const Home: NextPage = () => {
                         <label className={"label"}>{JSON.stringify(credentialsFeedback)}</label>
                       )}
                     </div>
-
-                    <h2 className="title is-2">Your validators with withdrawal address already set</h2>
-                    {validators && (
-                      <ul>
-                        {validators.filter((v:any)=>v.withdrawal_credentials.startsWith("0x01")).map((v: any, index: number) =>
-                          <li key={index}>
-                            {v.index}, {trim_pubkey(v.pubkey)}, <span className={"tag " + getStatusColor(v.status)}>{v.status}</span>, {withdrawaladdress_tag(v.withdrawal_credentials)}
-                          </li>
-                        )}
-                      </ul>
-                    )}
                   </div>
                 </div>
               </div>
