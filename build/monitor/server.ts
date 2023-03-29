@@ -32,7 +32,7 @@ server.pre(cors.preflight);
 server.use(cors.actual);
 server.use(restify.plugins.bodyParser());
 
-const settings_file_path = '/data/settings.json';
+const ethdo = server_config.eth_do_path
 
 server.get("/ping", (req: restify.Request, res: restify.Response, next: restify.Next) => {
     res.send(200, "pong");
@@ -216,6 +216,11 @@ server.get("/validatorsinfo", async (req: restify.Request, res: restify.Response
     next();
 });
 
+function ethdoExtraParams(installed_clients: string[]) {
+    const connection = rest_url_ip(installed_clients[0]);
+    const extra_params = `--connection ${connection} --allow-insecure-connections`;
+    return extra_params;
+}
 
 server.post("/derive_addresses", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
     const body = req.body
@@ -229,12 +234,8 @@ server.post("/derive_addresses", async (req: restify.Request, res: restify.Respo
         next();
     }
 
-    const connection = rest_url_ip(installed_clients[0])
-    const extra_params = `--connection ${connection} --allow-insecure-connections`
-    const ethdo = server_config.eth_do_path
-
     const derive_address = (path: string) => {
-        const stdout = execSync(`${ethdo} account derive --mnemonic="${mnemonic}" --path="${path}" ${extra_params}`)
+        const stdout = execSync(`${ethdo} account derive --mnemonic="${mnemonic}" --path="${path}" ${ethdoExtraParams(installed_clients)}`)
         const matches = stdout.toString().match(/Public key: (.*)/)
         if (matches) {
             return matches[1]
@@ -265,11 +266,7 @@ server.post("/set_credentials", async (req: restify.Request, res: restify.Respon
 
     console.log(`Setting withdrawal credentials of validator ${validator_index} to ${withdrawal_address}`)
 
-    const connection = rest_url_ip(installed_clients[0])
-    const extra_params = `--connection ${connection} --allow-insecure-connections`
-    const ethdo = "/Users/heeckhau/git/avado-daps/AVADO-SSV-Ethdo/build/monitor/ethdo"
-
-    const cmd = `${ethdo} validator credentials set --mnemonic="${mnemonic}" --validator="${validator_index}" --withdrawal-address="${withdrawal_address}" ${extra_params}`
+    const cmd = `${ethdo} validator credentials set --mnemonic="${mnemonic}" --validator="${validator_index}" --withdrawal-address="${withdrawal_address}" ${ethdoExtraParams(installed_clients)}`
 
     try {
         const stdout = execSync(cmd)
@@ -299,10 +296,7 @@ server.get("/get_credentials/:validator_index", async (req: restify.Request, res
 
     console.log(`Getting withdrawal credentials of validator ${validator_index}`)
 
-    const connection = rest_url_ip(installed_clients[0])
-    const extra_params = `--connection  ${connection} --allow-insecure-connections`
-    const ethdo = "/Users/heeckhau/git/avado-daps/AVADO-SSV-Ethdo/build/monitor/ethdo"
-    const cmd = `${ethdo} validator credentials get --validator="${validator_index}" ${extra_params}`
+    const cmd = `${ethdo} validator credentials get --validator="${validator_index}" ${ethdoExtraParams(installed_clients)}`
 
     try {
         const stdout = execSync(cmd)
