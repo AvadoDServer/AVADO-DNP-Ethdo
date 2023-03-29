@@ -42,16 +42,8 @@ VOLUME /data
 COPY --from=builder /usr/src/app/wizard/out /usr/local/wizard
 COPY --from=builder /usr/src/monitor/ /usr/local/monitor
 
-COPY startNimbus.sh /opt/nimbus/
-COPY reload-certs.sh /opt/nimbus/reload-certs.sh
-RUN chmod a+x /opt/nimbus/startNimbus.sh /opt/nimbus/reload-certs.sh
 COPY supervisord.conf /etc/supervisord.conf
 COPY nginx.conf /etc/nginx/
-
-# EXPOSE 5052
-# USER user
-# RUN curl "http://iso.ava.do/my.ava.do.crt" --output /opt/nimbus/my.ava.do.crt --silent
-# RUN curl "http://iso.ava.do/my.ava.do.key" --output /opt/nimbus/my.ava.do.key --silent
 
 USER root
 WORKDIR /
