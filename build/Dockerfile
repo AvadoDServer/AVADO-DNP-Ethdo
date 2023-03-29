@@ -11,6 +11,7 @@ RUN npm run build
 # Monitor
 WORKDIR /usr/src/monitor
 COPY monitor .
+RUN yarn
 RUN rm -Rf build && yarn run build
 
 FROM --platform=linux/amd64 wealdtech/ethdo:${UPSTREAM_VERSION}
