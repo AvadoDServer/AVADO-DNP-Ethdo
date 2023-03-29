@@ -231,7 +231,7 @@ server.post("/derive_addresses", async (req: restify.Request, res: restify.Respo
 
     const connection = rest_url_ip(installed_clients[0])
     const extra_params = `--connection ${connection} --allow-insecure-connections`
-    const ethdo = "/Users/heeckhau/git/avado-daps/AVADO-SSV-Ethdo/build/monitor/ethdo"
+    const ethdo = server_config.eth_do_path
 
     const derive_address = (path: string) => {
         const stdout = execSync(`${ethdo} account derive --mnemonic="${mnemonic}" --path="${path}" ${extra_params}`)
