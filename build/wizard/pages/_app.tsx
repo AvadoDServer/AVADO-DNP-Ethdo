@@ -1,5 +1,5 @@
-import '../styles/globals.css';
-import '../styles/style.sass';
+import '../styles/globals.scss';
+// import '../styles/style.sass';
 import '@rainbow-me/rainbowkit/styles.css';
 
 import type { AppProps } from 'next/app';
@@ -61,6 +61,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   }, []);
 
   return <>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css"></link>
     {wagmiClient ? (
       <WagmiConfig client={wagmiClient}>
         <RainbowKitProvider chains={chains}>
