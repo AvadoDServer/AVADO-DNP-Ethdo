@@ -51,8 +51,6 @@ server.get("/name", (req: restify.Request, res: restify.Response, next: restify.
 
 const supervisorCtl = new SupervisorCtl(`localhost`, 5555, '/RPC2') || null;
 
-const emptyCallBack = (error: Object, value: any) => { };
-
 const restart = async () => {
     await Promise.all([
         supervisorCtl.callMethod('supervisor.stopProcess', ["nimbus", true]),
