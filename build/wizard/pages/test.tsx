@@ -2,7 +2,6 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
-import { useAccount } from 'wagmi';
 import { ValidatorInfo, useValidators } from '../hooks/useValidators';
 import { useEffect, useState } from 'react';
 
@@ -14,7 +13,6 @@ import Link from 'next/link';
 
 const Home: NextPage = () => {
 
-    const { isConnected, address } = useAccount();
     const { validators, error: validators_error } = useValidators()
 
     const [showEdit, setShowEdit] = useState<ValidatorInfo | undefined>();
@@ -98,18 +96,20 @@ const Home: NextPage = () => {
                                                             {createBeaconchainUrl(v.pubkey, v.index)}
                                                         </td>
                                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{trim_pubkey(v.pubkey)}</td>
-                                                        <button
-                                                            onClick={() => { (showEdit == v ? setShowEdit(undefined) : setShowEdit(v)) }}
-                                                            type="button"
-                                                            className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                                        >
-                                                            Set Withdrawal address
-                                                        </button>
+                                                        {showEdit !== v && (
+                                                            <button
+                                                                onClick={() => { (showEdit == v ? setShowEdit(undefined) : setShowEdit(v)) }}
+                                                                type="button"
+                                                                className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                                            >
+                                                                Set Withdrawal address
+                                                            </button>
+                                                        )}
                                                     </tr>
                                                     {showEdit == v && (
                                                         <tr>
                                                             <td colSpan={3}>
-                                                                <SetWithdrawalAddress validator={v} address={address} amount={validators.length} />
+                                                                <SetWithdrawalAddress validator={v} amount={validators.length} />
                                                             </td>
                                                         </tr>
 
