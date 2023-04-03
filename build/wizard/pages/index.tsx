@@ -11,6 +11,8 @@ import { server_config } from '../server_config';
 import { ValidatorInfo, useValidators } from '../hooks/useValidators';
 import ValidatorsTags from '../components/validatorsTags';
 import SetValidatorCredentialsTable from '../components/SetValidatorCredentialsTable';
+import Spinner from '../components/Spinner';
+import NetworkBanner from '../components/NetworkBanner';
 
 const Home: NextPage = () => {
 
@@ -32,8 +34,9 @@ const Home: NextPage = () => {
     }, []);
 
     return (
-        <div className="py-10">
+        <div className="py-10 bg-white">
             <header>
+                <NetworkBanner network={server_config.network} />
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     {/* https://tailwindui.com/components/application-ui/headings/page-headings */}
                     <div className="lg:flex lg:items-center lg:justify-between">
@@ -133,9 +136,14 @@ const Home: NextPage = () => {
                     </div>
                 </div>
             </header>
-            <main>
+            <main className="bg-white">
+                {!validators && (
+                    <>
+                        <Spinner />Loading your validators...
+                    </>
+                )}
                 {validators && (
-                    <SetValidatorCredentialsTable  validators={validators.filter((v: ValidatorInfo) => v.withdrawal_credentials.startsWith("0x00"))}/>
+                    <SetValidatorCredentialsTable validators={validators.filter((v: ValidatorInfo) => v.withdrawal_credentials.startsWith("0x00"))} />
                 )}
             </main>
             <footer className="bg-white">

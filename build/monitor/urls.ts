@@ -30,14 +30,6 @@ export const rest_url = (client: string) => {
     }
 }
 
-//FIXME: why does it not work by name?
-export const rest_url_ip = (client: string) => {
-    switch (client) {
-        case "prysm": return "http://172.33.0.7:3500"
-        default: return "http://172.33.0.5:5051"
-    }
-}
-
 export const validatorAPI = (client: string) => {
     switch (client) {
         case "prysm": return "http://" + validator_url(client) + ":7500"

@@ -5,7 +5,7 @@ import { SupervisorCtl } from "./SupervisorCtl";
 import { server_config } from "./server_config";
 import { assert } from "console";
 import { execSync } from "child_process"
-import { rest_url, rest_url_ip, validatorAPI, getAvadoPackageName, getTokenPathInContainer, getAvadoExecutionClientPackageName, validator_url } from "./urls";
+import { rest_url, validatorAPI, getAvadoPackageName, getTokenPathInContainer, getAvadoExecutionClientPackageName, validator_url } from "./urls";
 import { DappManagerHelper } from "./DappManagerHelper";
 import { readFileSync } from "fs";
 const autobahn = require('autobahn');
@@ -219,7 +219,7 @@ server.get("/validatorsinfo", async (req: restify.Request, res: restify.Response
 });
 
 function ethdoExtraParams(installed_clients: string[]) {
-    const connection = rest_url_ip(installed_clients[0]);
+    const connection = rest_url(installed_clients[0]);
     const extra_params = `--connection ${connection} --allow-insecure-connections`;
     return extra_params;
 }

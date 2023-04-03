@@ -1,13 +1,6 @@
-import type { NextPage } from 'next';
-import Head from 'next/head';
-import styles from '../styles/Home.module.css';
-import { ValidatorInfo, useValidators } from '../hooks/useValidators';
-import { useEffect, useState } from 'react';
+import { ValidatorInfo } from '../hooks/useValidators';
 
 import { server_config } from '../server_config';
-import { CheckIcon } from '@heroicons/react/24/solid'
-import Example from './Example';
-import SetWithdrawalAddress from './SetWithdrawalAddress';
 import Link from 'next/link';
 
 const ValidatorsTags = ({ validators }: { validators: ValidatorInfo[] }) => {

@@ -1,11 +1,9 @@
-import { Dialog, Transition } from '@headlessui/react'
 import { CheckIcon } from '@heroicons/react/24/outline'
 import { ValidatorInfo } from '../hooks/useValidators'
 import { useEffect, useState } from 'react';
 import { utils } from 'ethers';
 import axios from 'axios';
 import { server_config } from '../server_config';
-import { Address } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import Spinner from './Spinner';
@@ -44,7 +42,7 @@ const SetWithdrawalAddress = ({ validator, amount, checkPendingValidators }: { v
         checkPendingValidators()
       })
       .catch(e => {
-        console.log("XXX", e)
+        console.log("Error setting credentials", e)
         const message = e.response.data || "Setting credentials failed"
         setCredentialsFeedback({ error: true, message })
         setSettingCredentials(false)
@@ -69,12 +67,6 @@ const SetWithdrawalAddress = ({ validator, amount, checkPendingValidators }: { v
 
     }
   }, [mnemonic]);
-
-
-  useEffect(() => {
-    console.log("address", address)
-  }, [address]);
-
 
   // steps menu - rendered based on the viewState
   const progressStepsBar = () => {

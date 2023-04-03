@@ -26,6 +26,7 @@ const SetValidatorCredentialsTable = ({ validators }: { validators: ValidatorInf
     }
 
     const checkPendingValidators = async () => {
+        setPendingValidators(undefined)
         const result = await Promise.all(validators.map(v => axios.get(`${server_config.monitor_url}/get_credentials/${v.index}`).then((res) => ({ v: v, data: res.data }))))
         const pending = result.filter(x => x.data.startsWith("Ethereum")).map(v => v.v)
         setPendingValidators(pending)
@@ -34,7 +35,7 @@ const SetValidatorCredentialsTable = ({ validators }: { validators: ValidatorInf
         if (validators) {
             checkPendingValidators()
         }
-    }, [validators, checkPendingValidators]);
+    }, [validators]);
 
     return (
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
