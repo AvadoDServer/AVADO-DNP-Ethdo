@@ -15,13 +15,10 @@ const supported_execution_clients = ["geth", "nethermind"];
 
 console.log("Monitor starting...");
 
-const https_options = server_config.dev ? {} : {
-    key: readFileSync('/etc/nginx/my.ava.do.key'),
-    certificate: readFileSync('/etc/nginx/my.ava.do.crt')
-};
+
 
 const server = restify.createServer({
-    ...https_options,
+    ...server_config.https_options,
     name: "MONITOR",
     version: "1.0.0"
 });

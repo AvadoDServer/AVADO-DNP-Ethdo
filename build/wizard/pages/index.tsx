@@ -18,6 +18,8 @@ const Home: NextPage = () => {
 
     const [ecClient, setEcClient] = useState<string>();
     const [bcClient, setBcClient] = useState<string>();
+    const [network, setNetwork] = useState<"goerli" | "mainnet" | "gnosis">();
+
     const { validators, error: validators_error } = useValidators()
 
     const title = "Avado: Set withdrawal credentials (Shapella update)"
@@ -31,12 +33,16 @@ const Home: NextPage = () => {
             .then((res) => {
                 setEcClient(res.data[0].name)
             });
+        axios.get(`${server_config.monitor_url}/network`)
+            .then((res) => {
+                setNetwork(res.data)
+            });
     }, []);
 
     return (
         <div className="py-10 bg-white">
             <header>
-                <NetworkBanner network={server_config.network} />
+                {network && <NetworkBanner network={network} />}
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     {/* https://tailwindui.com/components/application-ui/headings/page-headings */}
                     <div className="lg:flex lg:items-center lg:justify-between">
@@ -137,18 +143,20 @@ const Home: NextPage = () => {
                 </div>
             </header>
             <main className="bg-white">
-                {!validators && (
+                {!(validators && network) && (
                     <>
                         <Spinner />Loading your validators...
                     </>
                 )}
-                {validators && (
-                    <SetValidatorCredentialsTable validators={validators.filter((v: ValidatorInfo) => v.withdrawal_credentials.startsWith("0x00"))} />
+                {validators && network && (
+                    <SetValidatorCredentialsTable network={network} validators={validators.filter((v: ValidatorInfo) => v.withdrawal_credentials.startsWith("0x00"))} />
                 )}
             </main>
             <footer className="bg-white">
                 <div className="mx-auto max-w-7xl overflow-hidden px-6 py-20 sm:py-24 lg:px-8">
-                    <ValidatorsTags validators={validators} />
+                    {validators && network && (
+                        <ValidatorsTags network={network} validators={validators} />
+                    )}
                     <p className="mt-10 text-center text-xs leading-5 text-gray-500">
                         <a href="https://ava.do" target="_blank" rel="noopener noreferrer">
                             &copy; Made with ❤️ by your frens at Avado

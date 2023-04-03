@@ -8,7 +8,7 @@ import axios from 'axios';
 import Spinner from './Spinner';
 import { CheckIcon } from '@heroicons/react/24/outline'
 
-const SetValidatorCredentialsTable = ({ validators }: { validators: ValidatorInfo[] }) => {
+const SetValidatorCredentialsTable = ({ validators, network }: { validators: ValidatorInfo[], network: "goerli" | "mainnet" | "gnosis" }) => {
 
     const [showEdit, setShowEdit] = useState<ValidatorInfo | undefined>();
 
@@ -21,7 +21,7 @@ const SetValidatorCredentialsTable = ({ validators }: { validators: ValidatorInf
             "goerli": "https://prater.beaconcha.in",
             "mainnet": "https://beaconcha.in",
             "gnosis": "https://beacon.gnosischain.com"
-        })[server_config.network ?? "mainnet"]
+        })[network]
         return <Link href={beaconChainBaseUrl + "/validator/" + validatorPubkey} target="_blank" rel="noopener noreferrer">{text ? text : validatorPubkey}</Link>;
     }
 

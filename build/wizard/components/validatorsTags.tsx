@@ -3,14 +3,14 @@ import { ValidatorInfo } from '../hooks/useValidators';
 import { server_config } from '../server_config';
 import Link from 'next/link';
 
-const ValidatorsTags = ({ validators }: { validators: ValidatorInfo[] }) => {
+const ValidatorsTags = ({ validators, network }: { validators: ValidatorInfo[], network: "goerli" | "mainnet" | "gnosis" }) => {
 
     const createBeaconchainUrl = (validatorPubkey: string, text?: any) => {
         const beaconChainBaseUrl = ({
             "goerli": "https://prater.beaconcha.in",
             "mainnet": "https://beaconcha.in",
             "gnosis": "https://beacon.gnosischain.com"
-        })[server_config.network ?? "mainnet"]
+        })[network]
         return <Link href={beaconChainBaseUrl + "/validator/" + validatorPubkey} target="_blank" rel="noopener noreferrer">{text ? text : validatorPubkey}</Link>;
     }
 
