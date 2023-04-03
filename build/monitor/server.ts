@@ -7,6 +7,7 @@ import { assert } from "console";
 import { execSync } from "child_process"
 import { rest_url, rest_url_ip, validatorAPI, getAvadoPackageName, getTokenPathInContainer, getAvadoExecutionClientPackageName, validator_url } from "./urls";
 import { DappManagerHelper } from "./DappManagerHelper";
+import { readFileSync } from "fs";
 const autobahn = require('autobahn');
 
 const supported_beacon_chain_clients = ["prysm", "teku"];
@@ -14,7 +15,13 @@ const supported_execution_clients = ["geth", "nethermind"];
 
 console.log("Monitor starting...");
 
+const https_options = server_config.dev ? {} : {
+    key: readFileSync('/etc/nginx/my.ava.do.key'),
+    certificate: readFileSync('/etc/nginx/my.ava.do.crt')
+};
+
 const server = restify.createServer({
+    ...https_options,
     name: "MONITOR",
     version: "1.0.0"
 });

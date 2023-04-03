@@ -12,7 +12,7 @@ const SetValidatorCredentialsTable = ({ validators }: { validators: ValidatorInf
 
     const [showEdit, setShowEdit] = useState<ValidatorInfo | undefined>();
 
-    const [pendingValidators, setTodoValidators] = useState<ValidatorInfo[]>();
+    const [pendingValidators, setPendingValidators] = useState<ValidatorInfo[]>();
 
     const trim_pubkey = (pubkey: string) => pubkey.substring(0, 10) + "..." + pubkey.substring(pubkey.length - 10)
 
@@ -28,13 +28,13 @@ const SetValidatorCredentialsTable = ({ validators }: { validators: ValidatorInf
     const checkPendingValidators = async () => {
         const result = await Promise.all(validators.map(v => axios.get(`${server_config.monitor_url}/get_credentials/${v.index}`).then((res) => ({ v: v, data: res.data }))))
         const pending = result.filter(x => x.data.startsWith("Ethereum")).map(v => v.v)
-        setTodoValidators(pending)
+        setPendingValidators(pending)
     }
     useEffect(() => {
         if (validators) {
             checkPendingValidators()
         }
-    }, [validators]);
+    }, [validators, checkPendingValidators]);
 
     return (
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
@@ -45,7 +45,7 @@ const SetValidatorCredentialsTable = ({ validators }: { validators: ValidatorInf
                             <p className="mt-2 text-sm text-gray-700">
                                 Your validators that need their withdrawal address set
                             </p>
-                            {!validators ? <><Spinner />"Loading..."</> : (
+                            {!validators ? <><Spinner />Loading...</> : (
                                 <>
                                     <table className="min-w-full divide-y divide-gray-300">
                                         <thead>

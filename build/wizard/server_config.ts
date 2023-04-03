@@ -1,7 +1,7 @@
 const dev = false;
 
 export const server_config = {
-    monitor_url: dev ? "http://localhost:9999" : "http://ethdo.my.ava.do:9999",
+    monitor_url: dev ? "http://localhost:9999" : "https://ethdo.my.ava.do:9999",
     network: "goerli",
     name : "ethdo"
 }
