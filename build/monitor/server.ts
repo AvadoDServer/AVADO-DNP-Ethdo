@@ -4,8 +4,8 @@ import axios, { Method, AxiosRequestHeaders } from "axios";
 import { SupervisorCtl } from "./SupervisorCtl";
 import { server_config } from "./server_config";
 import { assert } from "console";
-import { exec, execSync } from "child_process"
-import { rest_url, rest_url_ip, validatorAPI, getAvadoPackageName, getTokenPathInContainer, getAvadoExecutionClientPackageName } from "./urls";
+import { execSync } from "child_process"
+import { rest_url, rest_url_ip, validatorAPI, getAvadoPackageName, getTokenPathInContainer, getAvadoExecutionClientPackageName, validator_url } from "./urls";
 import { DappManagerHelper } from "./DappManagerHelper";
 const autobahn = require('autobahn');
 
@@ -23,7 +23,6 @@ const cors = corsMiddleware({
     preflightMaxAge: 5, //Optional
     origins: [
         /^http:\/\/localhost(:[\d]+)?$/,
-        "http://*.dappnode.eth",
         "http://*.my.ava.do"
     ]
 });
@@ -144,12 +143,10 @@ server.get("/executionclients", async (req: restify.Request, res: restify.Respon
 
     const installed_clients = supported_execution_clients.filter(client => packages.includes(getAvadoExecutionClientPackageName(client)));
 
-    res.send(200, installed_clients.map(client => {
-        return {
-            name: client,
-            api: `http://${getAvadoExecutionClientPackageName(client)}:8545`
-        }
-    }))
+    res.send(200, installed_clients.map(client => ({
+        name: client,
+        api: `http://${validator_url(client)}:8545`
+    })))
     next();
 })
 
@@ -277,6 +274,9 @@ server.post("/set_credentials", async (req: restify.Request, res: restify.Respon
     }
 });
 
+// Returns one of:
+// * "Ethereum execution address: 0x9b18e9e9aa3dD35100b385b7035C0B1E44AfcA14"
+// * "BLS credentials: 0x00f719a14c8733dbb419af60246d8f29181f2549f99d6aa0867ba92d7d2a2966"
 server.get("/get_credentials/:validator_index", async (req: restify.Request, res: restify.Response, next: restify.Next) => {
     const validator_index = parseInt(req.params?.validator_index)
 
@@ -329,3 +329,4 @@ server.listen(9999, function () {
     //     console.log("supervisor", value.statename)
     // })
 });
+

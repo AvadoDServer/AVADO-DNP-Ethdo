@@ -8,8 +8,9 @@ import { server_config } from '../server_config';
 import { Address } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
+import Spinner from './Spinner';
 
-const SetWithdrawalAddress = ({ validator, amount }: { validator: ValidatorInfo, amount: number }) => {
+const SetWithdrawalAddress = ({ validator, amount, checkPendingValidators }: { validator: ValidatorInfo, amount: number, checkPendingValidators: any }) => {
   const { isConnected, address } = useAccount();
 
   const [viewState, setViewState] = useState<number>(1);
@@ -26,36 +27,28 @@ const SetWithdrawalAddress = ({ validator, amount }: { validator: ValidatorInfo,
   const cleanUpMnemonicInput = (rawMnemonic: string) => rawMnemonic.trim().split(/\s+/).join(" ")
 
   const set_credentials = () => {
-    console.log("setting asdfa")
     setCredentialsFeedback({ error: false })
     setSettingCredentials(true)
-    try {
-      axios.post(`${server_config.monitor_url}/set_credentials`,
-        {
-          validator_index: validator.index,
-          mnemonic: mnemonic,
-          withdrawal_address: address
-        })
-        .then(res => {
-          console.dir(res.data)
-          setCredentialsFeedback({ error: false, message: res.data || "Credentials set" })
-          setSettingCredentials(false)
-          setViewState(4)
-        })
-        .catch(e => {
-          console.log("XXX", e)
-          const message = e.response.data || "Setting credentials failed"
-          setCredentialsFeedback({ error: true, message })
-          setSettingCredentials(false)
-          setViewState(4)
-        })
-    } catch (e: any) {
-      console.log("YYYYY", e)
-      console.dir(e)
-      const message = e.response.data || "Setting credentials failed"
-      setCredentialsFeedback({ error: true, message })
-      setSettingCredentials(false)
-    }
+    setViewState(4)
+
+    axios.post(`${server_config.monitor_url}/set_credentials`,
+      {
+        validator_index: validator.index,
+        mnemonic: mnemonic,
+        withdrawal_address: address
+      })
+      .then(res => {
+        console.dir(res.data)
+        setCredentialsFeedback({ error: false, message: res.data || "Credentials set" })
+        setSettingCredentials(false)
+        checkPendingValidators()
+      })
+      .catch(e => {
+        console.log("XXX", e)
+        const message = e.response.data || "Setting credentials failed"
+        setCredentialsFeedback({ error: true, message })
+        setSettingCredentials(false)
+      })
   }
 
   useEffect(() => {
@@ -70,7 +63,7 @@ const SetWithdrawalAddress = ({ validator, amount }: { validator: ValidatorInfo,
         const result = res.data
         setSupportedAddresses(result)
         setLoadingMatchingValidators(false);
-        if (result.includes(validator.pubkey))
+        if (result.includes(validator.pubkey) && viewState == 1)
           setViewState(2)
       });
 
@@ -166,16 +159,15 @@ const SetWithdrawalAddress = ({ validator, amount }: { validator: ValidatorInfo,
         {mnemonic !== "" && !validMnemonic() && (
           <p className="mt-2 text-sm text-red-600 dark:text-red-500">Invalid mnemonic</p>
         )}
-        {!loadingMatchingValidators && supportedAddresses && !supportedAddresses.includes(validator.pubkey) && (
+        {mnemonic !== "" && !loadingMatchingValidators && supportedAddresses && !supportedAddresses.includes(validator.pubkey) && (
           <p className="mt-2 text-sm text-red-600 dark:text-red-500">
             This mnemonic does not match this validator
           </p>
         )}
         {loadingMatchingValidators && (
           <div className="animate-pulse flex space-x-4">
-            Checking mnemonic...
+            <><Spinner/>Checking mnemonic...</> 
           </div>
-
         )}
       </div>
     </>
@@ -187,9 +179,6 @@ const SetWithdrawalAddress = ({ validator, amount }: { validator: ValidatorInfo,
       <div className="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow">
         <div className="px-4 py-5 sm:px-6">
           Please enter the desired withdrawal address (= an Ethereum address that you own)
-        </div>
-
-        <div className="column">
           <ConnectButton showBalance={false} />
           {/* TODO: sign message : https://www.rainbowkit.com/docs/authentication */}
         </div>
@@ -233,7 +222,7 @@ const SetWithdrawalAddress = ({ validator, amount }: { validator: ValidatorInfo,
       <div>
         {settingCredentials && (
           <div className="animate-pulse flex space-x-4">
-            Setting credentials...
+            <><Spinner/>Setting credentials...</> 
           </div>)}
         {!settingCredentials && credentialsFeedback.message && (
           <p className={`mt-2 text-sm ${credentialsFeedback.error ? "text-red-600" : "text-green-700"}`}>
