@@ -1,12 +1,11 @@
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { NextPage } from 'next';
 import {
     PlayIcon,
     AdjustmentsHorizontalIcon,
     ServerIcon,
 } from '@heroicons/react/20/solid'
-import { Menu, Transition } from '@headlessui/react'
-import axios, { Method, AxiosRequestHeaders } from "axios";
+import axios from "axios";
 import { server_config } from '../server_config';
 import { ValidatorInfo, useValidators } from '../hooks/useValidators';
 import ValidatorsTags from '../components/validatorsTags';
