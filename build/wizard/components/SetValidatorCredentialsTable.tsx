@@ -8,10 +8,18 @@ import axios from 'axios';
 import Spinner from './Spinner';
 import { CheckIcon } from '@heroicons/react/24/outline'
 
-const SetValidatorCredentialsTable = ({ validators, network }: { validators: ValidatorInfo[], network: "goerli" | "mainnet" | "gnosis" }) => {
+interface Props {
+    validators: ValidatorInfo[],
+    network: "goerli" | "mainnet" | "gnosis",
+    numberOfAddressesToDerive: number
+}
 
+const SetValidatorCredentialsTable = ({ validators, network, numberOfAddressesToDerive: numberOfAddressesToDerive }: Props) => {
+
+    //currently showing the SetWithdrawalAddress widget for this validator
     const [showEdit, setShowEdit] = useState<ValidatorInfo | undefined>();
 
+    //which validators are set, but not reflected in the validators list yet (checked with Ethdo)
     const [pendingValidators, setPendingValidators] = useState<ValidatorInfo[]>();
 
     const trim_pubkey = (pubkey: string) => pubkey.substring(0, 10) + "..." + pubkey.substring(pubkey.length - 10)
@@ -26,11 +34,14 @@ const SetValidatorCredentialsTable = ({ validators, network }: { validators: Val
     }
 
     const checkPendingValidators = async () => {
+        console.log("check for pending validators")
         setPendingValidators(undefined)
         const result = await Promise.all(validators.map(v => axios.get(`${server_config.monitor_url}/get_credentials/${v.index}`).then((res) => ({ v: v, data: res.data }))))
         const pending = result.filter(x => x.data.startsWith("Ethereum")).map(v => v.v)
+        console.log("Pending validators", pending)
         setPendingValidators(pending)
     }
+
     useEffect(() => {
         if (validators) {
             checkPendingValidators()
@@ -76,31 +87,33 @@ const SetValidatorCredentialsTable = ({ validators, network }: { validators: Val
                                                             </td>
                                                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{trim_pubkey(v.pubkey)}</td>
                                                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                                {showEdit !== v && (
-                                                                    <div className="mx-auto flex items-center justify-center">
-                                                                            {!pendingValidators && <Spinner />}
-                                                                        {pendingValidators && (pendingValidators.includes(v) ?
-                                                                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                                                                                <CheckIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
-                                                                            </div>
-                                                                            :
-                                                                            <button
-                                                                                onClick={() => { (showEdit == v ? setShowEdit(undefined) : setShowEdit(v)) }}
-                                                                                type="button"
-                                                                                className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                                                            >
-                                                                                Set Withdrawal address
-                                                                            </button>
-                                                                        )
-                                                                        }
-                                                                    </div>
-                                                                )}
+                                                                <div className="mx-auto flex items-center justify-center">
+                                                                    {!pendingValidators && <Spinner />}
+                                                                    {pendingValidators && (pendingValidators.includes(v) ?
+                                                                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                                                                            <CheckIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
+                                                                        </div>
+                                                                        :
+                                                                        <>
+                                                                            {showEdit !== v && (
+                                                                                <button
+                                                                                    onClick={() => { (showEdit == v ? setShowEdit(undefined) : setShowEdit(v)) }}
+                                                                                    type="button"
+                                                                                    className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                                                                >
+                                                                                    Set Withdrawal address
+                                                                                </button>
+                                                                            )}
+                                                                        </>
+                                                                    )
+                                                                    }
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                         {showEdit == v && (
                                                             <tr key={`edit_${index}`}>
                                                                 <td colSpan={3}>
-                                                                    <SetWithdrawalAddress validator={v} amount={validators.length} checkPendingValidators={checkPendingValidators}/>
+                                                                    <SetWithdrawalAddress validator={v} numberOfAddressesToDerive={numberOfAddressesToDerive} checkPendingValidators={checkPendingValidators} />
                                                                 </td>
                                                             </tr>
                                                         )}

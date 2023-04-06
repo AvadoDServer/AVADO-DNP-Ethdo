@@ -148,7 +148,7 @@ const Home: NextPage = () => {
                     </>
                 )}
                 {validators && network && (
-                    <SetValidatorCredentialsTable network={network} validators={validators.filter((v: ValidatorInfo) => v.withdrawal_credentials.startsWith("0x00"))} />
+                    <SetValidatorCredentialsTable network={network} validators={validators.filter((v: ValidatorInfo) => v.withdrawal_credentials.startsWith("0x00"))} numberOfAddressesToDerive={validators.length}/>
                 )}
             </main>
             <footer className="bg-white">

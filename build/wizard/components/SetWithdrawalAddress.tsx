@@ -8,7 +8,13 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import Spinner from './Spinner';
 
-const SetWithdrawalAddress = ({ validator, amount, checkPendingValidators }: { validator: ValidatorInfo, amount: number, checkPendingValidators: any }) => {
+interface Props {
+  validator: ValidatorInfo,
+  numberOfAddressesToDerive: number,
+  checkPendingValidators: () => Promise<void>
+}
+
+const SetWithdrawalAddress = ({ validator, numberOfAddressesToDerive: numberOfAddressesToDerive, checkPendingValidators }: Props) => {
   const { isConnected, address } = useAccount();
 
   const [viewState, setViewState] = useState<number>(1);
@@ -29,6 +35,10 @@ const SetWithdrawalAddress = ({ validator, amount, checkPendingValidators }: { v
     setSettingCredentials(true)
     setViewState(4)
 
+    const waitAndCheckPendingValidators = async () => {
+      // wait 5 seconds and update the pending validators
+      await setTimeout(checkPendingValidators, 5000);
+    }
     axios.post(`${server_config.monitor_url}/set_credentials`,
       {
         validator_index: validator.index,
@@ -39,7 +49,7 @@ const SetWithdrawalAddress = ({ validator, amount, checkPendingValidators }: { v
         console.dir(res.data)
         setCredentialsFeedback({ error: false, message: res.data || "Credentials set" })
         setSettingCredentials(false)
-        checkPendingValidators()
+        waitAndCheckPendingValidators()
       })
       .catch(e => {
         console.log("Error setting credentials", e)
@@ -54,10 +64,10 @@ const SetWithdrawalAddress = ({ validator, amount, checkPendingValidators }: { v
       setLoadingMatchingValidators(true);
       axios.post(`${server_config.monitor_url}/derive_addresses`, {
         mnemonic: mnemonic,
-        amount: amount
+        amount: numberOfAddressesToDerive
       }
       ).then((res) => {
-        // console.log(res.data)
+        // console.log("derived validators", res.data)
         const result = res.data
         setSupportedAddresses(result)
         setLoadingMatchingValidators(false);
@@ -158,7 +168,7 @@ const SetWithdrawalAddress = ({ validator, amount, checkPendingValidators }: { v
         )}
         {loadingMatchingValidators && (
           <div className="animate-pulse flex space-x-4">
-            <><Spinner/>Checking mnemonic...</> 
+            <><Spinner />Checking mnemonic...</>
           </div>
         )}
       </div>
@@ -214,7 +224,7 @@ const SetWithdrawalAddress = ({ validator, amount, checkPendingValidators }: { v
       <div>
         {settingCredentials && (
           <div className="animate-pulse flex space-x-4">
-            <><Spinner/>Setting credentials...</> 
+            <><Spinner />Setting credentials...</>
           </div>)}
         {!settingCredentials && credentialsFeedback.message && (
           <p className={`mt-2 text-sm ${credentialsFeedback.error ? "text-red-600" : "text-green-700"}`}>
