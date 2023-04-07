@@ -27,22 +27,21 @@ const ValidatorsTags = ({ validators, network }: { validators: ValidatorInfo[], 
 
     return (
         <>
-            <div className="px-4 sm:px-6 lg:px-8">
-                <div className="sm:flex sm:items-center">
-                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                        <div className="sm:flex-auto">
-                            <p className="text-base font-semibold leading-6 text-gray-900 text-center">Validators Overview </p>
-                            <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-                                {validators && (
-                                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                                        {validators.sort((v1, v2) => v1.index - v2.index).map((v, index) => withdrawaladdress_tag(v))}
-                                    </div>
-                                )}
-                            </div>
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="flex-auto items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                        <p className="text-base font-semibold leading-6 text-gray-900 text-center">Validators Overview </p>
+                        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+                            {validators && (
+                                <>
+                                    {validators.sort((v1, v2) => v1.index - v2.index).map((v, index) => withdrawaladdress_tag(v))}
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
+
         </>
     )
 };

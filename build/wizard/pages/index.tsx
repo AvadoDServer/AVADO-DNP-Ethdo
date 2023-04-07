@@ -148,7 +148,13 @@ const Home: NextPage = () => {
                     </>
                 )}
                 {validators && network && (
-                    <SetValidatorCredentialsTable network={network} validators={validators.filter((v: ValidatorInfo) => v.withdrawal_credentials.startsWith("0x00"))} numberOfAddressesToDerive={validators.length}/>
+                    <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                        <div className="lg:flex lg:items-center lg:justify-between">
+                            <div className="min-w-0 flex-1">
+                                <SetValidatorCredentialsTable network={network} validators={validators.filter((v: ValidatorInfo) => v.withdrawal_credentials.startsWith("0x00"))} numberOfAddressesToDerive={validators.length} />
+                            </div>
+                        </div>
+                    </div>
                 )}
             </main>
             <footer className="bg-white">

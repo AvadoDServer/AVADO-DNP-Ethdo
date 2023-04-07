@@ -48,6 +48,71 @@ const SetValidatorCredentialsTable = ({ validators, network, numberOfAddressesTo
         }
     }, [validators]);
 
+    const validatorsTable = () => (
+        <table className="min-w-full divide-y divide-gray-300">
+            <thead>
+                <tr>
+                    <th
+                        scope="col"
+                        className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 lg:pl-8"
+                    >
+                        Index
+                    </th>
+                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        Pubkey
+                    </th>
+                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-3">
+                        <span className="sr-only">Actions</span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+
+                {validators.sort((v1, v2) => v1.index - v2.index)
+                    .map((v: ValidatorInfo, index: number) => (
+                        <>
+                            <tr key={index}>
+                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8">
+                                    {createBeaconchainUrl(v.pubkey, v.index)}
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{trim_pubkey(v.pubkey)}</td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    <div className="mx-auto flex items-center justify-center">
+                                        {!pendingValidators && <Spinner />}
+                                        {pendingValidators && (pendingValidators.includes(v) ?
+                                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                                                <CheckIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
+                                            </div>
+                                            :
+                                            <>
+                                                {showEdit !== v && (
+                                                    <button
+                                                        onClick={() => { (showEdit == v ? setShowEdit(undefined) : setShowEdit(v)); }}
+                                                        type="button"
+                                                        className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                                    >
+                                                        Set Withdrawal address
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                            {showEdit == v && (
+                                <tr key={`edit_${index}`}>
+                                    <td colSpan={3}>
+                                        <SetWithdrawalAddress validator={v} numberOfAddressesToDerive={numberOfAddressesToDerive} checkPendingValidators={checkPendingValidators} />
+                                    </td>
+                                </tr>
+                            )}
+                        </>
+                    ))}
+
+            </tbody>
+        </table>
+    )
+
     return (
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
             <div className="px-4 sm:px-6 lg:px-8">
@@ -59,69 +124,17 @@ const SetValidatorCredentialsTable = ({ validators, network, numberOfAddressesTo
                             </p>
                             {!validators ? <><Spinner />Loading...</> : (
                                 <>
-                                    <table className="min-w-full divide-y divide-gray-300">
-                                        <thead>
-                                            <tr>
-                                                <th
-                                                    scope="col"
-                                                    className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6 lg:pl-8"
-                                                >
-                                                    Index
-                                                </th>
-                                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                                    Pubkey
-                                                </th>
-                                                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-3">
-                                                    <span className="sr-only">Actions</span>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200 bg-white">
-
-                                            {validators.sort((v1, v2) => v1.index - v2.index)
-                                                .map((v: ValidatorInfo, index: number) => (
-                                                    <>
-                                                        <tr key={index}>
-                                                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8">
-                                                                {createBeaconchainUrl(v.pubkey, v.index)}
-                                                            </td>
-                                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{trim_pubkey(v.pubkey)}</td>
-                                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                                <div className="mx-auto flex items-center justify-center">
-                                                                    {!pendingValidators && <Spinner />}
-                                                                    {pendingValidators && (pendingValidators.includes(v) ?
-                                                                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                                                                            <CheckIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
-                                                                        </div>
-                                                                        :
-                                                                        <>
-                                                                            {showEdit !== v && (
-                                                                                <button
-                                                                                    onClick={() => { (showEdit == v ? setShowEdit(undefined) : setShowEdit(v)) }}
-                                                                                    type="button"
-                                                                                    className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                                                                >
-                                                                                    Set Withdrawal address
-                                                                                </button>
-                                                                            )}
-                                                                        </>
-                                                                    )
-                                                                    }
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        {showEdit == v && (
-                                                            <tr key={`edit_${index}`}>
-                                                                <td colSpan={3}>
-                                                                    <SetWithdrawalAddress validator={v} numberOfAddressesToDerive={numberOfAddressesToDerive} checkPendingValidators={checkPendingValidators} />
-                                                                </td>
-                                                            </tr>
-                                                        )}
-                                                    </>
-                                                ))}
-
-                                        </tbody>
-                                    </table>
+                                    {validators.length == 0 && (
+                                        <>
+                                            <div className="mx-auto flex justify-center">
+                                                All set! Nothing to do 🔥
+                                            </div>
+                                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                                                <CheckIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
+                                            </div>
+                                        </>
+                                    )}
+                                    {validators.length > 0 && validatorsTable()}
                                 </>
                             )}
                         </div>
@@ -133,3 +146,5 @@ const SetValidatorCredentialsTable = ({ validators, network, numberOfAddressesTo
 };
 
 export default SetValidatorCredentialsTable;
+
+
