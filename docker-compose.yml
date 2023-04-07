@@ -9,6 +9,8 @@ services:
     restart: always
     volumes:
       - 'data:/data'
+    environment:
+      - NETWORK=mainnet
     ports:
       - '80:80'
 volumes:

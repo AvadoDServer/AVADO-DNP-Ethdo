@@ -9,7 +9,7 @@
   "type": "service",
   "image": {
     "environment": [
-      "EXTRA_OPTS="
+      "NETWORK=mainnet"
     ],
     "volumes": [
       "data:/data"

@@ -1,12 +1,12 @@
 ARG UPSTREAM_VERSION
 
-FROM node:16.15.0 as builder
+FROM node:18.15.0 as builder
 
 # build wizard
 WORKDIR /usr/src/app/wizard
 COPY wizard .
-RUN npm i
-RUN npm run build 
+RUN yarn
+RUN yarn build
 
 # Monitor
 WORKDIR /usr/src/monitor
@@ -42,6 +42,9 @@ VOLUME /data
 # copy wizard & monitor
 COPY --from=builder /usr/src/app/wizard/out /usr/local/wizard
 COPY --from=builder /usr/src/monitor/ /usr/local/monitor
+
+RUN curl "https://iso.ava.do/my.ava.do.crt" --output /etc/nginx/my.ava.do.crt --silent
+RUN curl "https://iso.ava.do/my.ava.do.key" --output /etc/nginx/my.ava.do.key --silent
 
 COPY supervisord.conf /etc/supervisord.conf
 COPY nginx.conf /etc/nginx/
