@@ -21,11 +21,10 @@ const AddressInput = ({ onFinish, setWithdrawalAddress }: Props) => {
     }
 
     const finish = () => {
-        if (manualAddressInput) {
+        if (manualInput) {
             if (!isEnsName() && utils.isAddress(manualAddressInput)) {
                 setWithdrawalAddress(manualAddressInput)
-            }
-            else {
+            } else {
                 setWithdrawalAddress(data)
             }
         } else {
