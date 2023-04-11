@@ -1,5 +1,5 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
+import { useAccount, useEnsAddress, useEnsResolver } from 'wagmi';
 import { Switch } from '@headlessui/react'
 import { useEffect, useState } from 'react';
 import { faUtensilSpoon } from '@fortawesome/free-solid-svg-icons';
@@ -21,8 +21,13 @@ const AddressInput = ({ onFinish, setWithdrawalAddress }: Props) => {
     }
 
     const finish = () => {
-        if (manualAddressInput && utils.isAddress(manualAddressInput)) {
-            setWithdrawalAddress(manualAddressInput)
+        if (manualAddressInput) {
+            if (!isEnsName() && utils.isAddress(manualAddressInput)) {
+                setWithdrawalAddress(manualAddressInput)
+            }
+            else {
+                setWithdrawalAddress(data)
+            }
         } else {
             setWithdrawalAddress(address)
         }
@@ -31,21 +36,36 @@ const AddressInput = ({ onFinish, setWithdrawalAddress }: Props) => {
 
     const canAdvance = () => {
         if (manualInput) {
-            return utils.isAddress(manualAddressInput)
+            if (!isEnsName())
+                return utils.isAddress(manualAddressInput)
+            else
+                return utils.isAddress(data ?? "")
         } else {
             return isConnected
         }
     }
 
+    const isEnsName = () => manualAddressInput.endsWith(".eth")
+
+    const { data, error, isLoading, refetch } = useEnsAddress({
+        name: manualAddressInput,
+        enabled: isEnsName(),
+    })
+
+
     const walletInput = <ConnectButton showBalance={false} />
 
     useEffect(() => {
-        if (manualAddressInput && utils.isAddress(manualAddressInput)) {
+        if (error) {
+            setManualAddressFeedback(error.message)
+        } else if (manualAddressInput && utils.isAddress(manualAddressInput)) {
             setManualAddressFeedback(undefined)
+        } else if (isEnsName() && utils.isAddress(data ?? "")) {
+            setManualAddressFeedback(data ?? undefined)
         } else {
             setManualAddressFeedback("Invalid Ethereum address")
         }
-    }, [manualAddressInput]);
+    }, [manualAddressInput, data, error]);
 
     const manual = (
         <>
