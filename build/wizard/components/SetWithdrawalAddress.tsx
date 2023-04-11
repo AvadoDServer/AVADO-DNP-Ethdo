@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react';
 import { utils } from 'ethers';
 import axios from 'axios';
 import { server_config } from '../server_config';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
 import Spinner from './Spinner';
+import AddressInput from './AddressInput';
 
 interface Props {
   validator: ValidatorInfo,
@@ -15,12 +14,12 @@ interface Props {
 }
 
 const SetWithdrawalAddress = ({ validator, numberOfAddressesToDerive: numberOfAddressesToDerive, checkPendingValidators }: Props) => {
-  const { isConnected, address } = useAccount();
-
   const [viewState, setViewState] = useState<number>(1);
   const [loadingMatchingValidators, setLoadingMatchingValidators] = useState(false);
   const [mnemonic, setMnemonic] = useState<string>("");
   const [supportedAddresses, setSupportedAddresses] = useState<string[]>([]);
+  const [withdrawalAddress, setWithdrawalAddress] = useState<string>("");
+
 
 
   const [settingCredentials, setSettingCredentials] = useState<boolean>(false);
@@ -175,29 +174,6 @@ const SetWithdrawalAddress = ({ validator, numberOfAddressesToDerive: numberOfAd
     </>
   )
 
-
-  const addressInput = () => (
-    <>
-      <div className="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow">
-        <div className="px-4 py-5 sm:px-6">
-          Please enter the desired withdrawal address (= an Ethereum address that you own)
-          <ConnectButton showBalance={false} />
-          {/* TODO: sign message : https://www.rainbowkit.com/docs/authentication */}
-        </div>
-      </div >
-
-      <button
-        onClick={() => { setViewState(3); }}
-        type="button"
-        className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        disabled={!isConnected}
-      >
-        Continue
-      </button>
-    </>
-  )
-
-
   const confirm = () => (<>
     <div>Are you sure you want to set the withdrawal address of {validator.pubkey} to {address}?</div>
     <div>Please double check because you can only set the withdrawal address once.</div>
@@ -218,7 +194,7 @@ const SetWithdrawalAddress = ({ validator, numberOfAddressesToDerive: numberOfAd
   return (<>
     {progressStepsBar()}
     {viewState == 1 && mnemonicInput()}
-    {viewState == 2 && addressInput()}
+    {viewState == 2 && (<AddressInput onFinish={() => setViewState(3)} setWithdrawalAddress={setWithdrawalAddress}></AddressInput>)}
     {viewState == 3 && confirm()}
     {viewState == 4 && (
       <div>
