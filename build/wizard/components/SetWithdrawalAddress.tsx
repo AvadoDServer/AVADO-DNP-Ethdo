@@ -175,26 +175,36 @@ const SetWithdrawalAddress = ({ validator, numberOfAddressesToDerive: numberOfAd
   )
 
   const confirm = () => (<>
-    <div>Are you sure you want to set the withdrawal address of {validator.pubkey} to {address}?</div>
-    <div>Please double check because you can only set the withdrawal address once.</div>
-    <div>
-      <strong>This is final. You can NOT change this afterwards. So if you lose access to the private key of this address, the deposit and rewards of this validator are lost forever</strong>
-    </div>
-    <div>Note that it may take a while for the chain to pick up your withdrawal address configuration.</div>
+    <div className="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow">
+      <div className="px-4 py-5 sm:px-6 space-y-4">
+        <div role="alert">
+          <div className="bg-red-500 text-white font-bold rounded-t px-4 py-2">
+            ☠️ Please check the address three times because you can only set the withdrawal address once ☠️ 
+          </div>
+          <div className="border border-t-0 border-red-400 rounded-b bg-red-100 px-4 py-3 text-red-700">
+          <strong>This is final. You can NOT change this afterwards. So if you lose access to the private key of this address, the deposit and rewards of this validator are lost forever</strong>
+          </div>
+        </div>
 
-    <button
-      onClick={set_credentials}
-      type="button"
-      className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-    >
-      Confirm withdrawal address
-    </button>
+        <div>Are you sure you want to set the withdrawal address of Validator {validator.index} (<code>{validator.pubkey}</code>) to <code>{withdrawalAddress}</code>?</div>
+
+        <div>⏳ Note that it may take a while for the chain to pick up your withdrawal address configuration. ⏳</div>
+
+        <button
+          onClick={set_credentials}
+          type="button"
+          className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          Confirm withdrawal address
+        </button>
+      </div>
+    </div>
   </>)
 
   return (<>
     {progressStepsBar()}
     {viewState == 1 && mnemonicInput()}
-    {viewState == 2 && (<AddressInput onFinish={() => setViewState(3)} setWithdrawalAddress={setWithdrawalAddress}></AddressInput>)}
+    {viewState == 2 && (<AddressInput onFinish={() => setViewState(3)} setWithdrawalAddress={setWithdrawalAddress} />)}
     {viewState == 3 && confirm()}
     {viewState == 4 && (
       <div>
