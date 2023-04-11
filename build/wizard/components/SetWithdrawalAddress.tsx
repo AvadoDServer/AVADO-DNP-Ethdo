@@ -20,8 +20,6 @@ const SetWithdrawalAddress = ({ validator, numberOfAddressesToDerive: numberOfAd
   const [supportedAddresses, setSupportedAddresses] = useState<string[]>([]);
   const [withdrawalAddress, setWithdrawalAddress] = useState<string>("");
 
-
-
   const [settingCredentials, setSettingCredentials] = useState<boolean>(false);
   const [credentialsFeedback, setCredentialsFeedback] = useState<{ error: boolean, message?: string }>({ error: false });
 
@@ -42,7 +40,7 @@ const SetWithdrawalAddress = ({ validator, numberOfAddressesToDerive: numberOfAd
       {
         validator_index: validator.index,
         mnemonic: mnemonic,
-        withdrawal_address: address
+        withdrawal_address: withdrawalAddress
       })
       .then(res => {
         console.dir(res.data)
