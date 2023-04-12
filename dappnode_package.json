@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "upstream": "1.28.5",
   "autoupdate": true,
-  "title": "ethdo operator package",
-  "description": "Distributed validator support with ethdo",
-  "avatar": "/ipfs/QmP9LwzCZMVUVWYqARGnCt8kKiTdpCoWKaogEPyWWGSRtE",
+  "title": "ETH Withdrawal address tool",
+  "description": "This tool will verify if your validator if ready for withdrawals of staking rewards or to be exited. If it's not ready, this tool will help you set the withdrawal address for you for each of your validators.",
+  "avatar": "/ipfs/QmYJ3L2xciQH946QPNC6FiBwyYD4NTdK2TAtBLZ3TFTLzr",
   "type": "service",
   "image": {
     "environment": [
