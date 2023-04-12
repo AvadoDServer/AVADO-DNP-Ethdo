@@ -1,6 +1,6 @@
 {
   "name": "ethdo.avado.dappnode.eth",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "upstream": "1.28.5",
   "autoupdate": true,
   "title": "ETH Withdrawal address tool",

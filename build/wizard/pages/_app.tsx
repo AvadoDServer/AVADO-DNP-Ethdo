@@ -4,7 +4,7 @@ import '@rainbow-me/rainbowkit/styles.css';
 
 import type { AppProps } from 'next/app';
 import { RainbowKitProvider, getDefaultWallets } from '@rainbow-me/rainbowkit';
-import { configureChains, createClient, WagmiConfig } from 'wagmi';
+import { configureChains, createClient, mainnet, WagmiConfig } from 'wagmi';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { publicProvider } from 'wagmi/providers/public';
 import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
@@ -24,7 +24,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
       const { chains, provider, webSocketProvider } = configureChains(
         [
-          goerli
+          goerli, mainnet
         ],
         clientRpcs.map((client_rpc: any) =>
           jsonRpcProvider({
