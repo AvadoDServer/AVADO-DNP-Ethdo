@@ -43,8 +43,12 @@ VOLUME /data
 COPY --from=builder /usr/src/app/wizard/out /usr/local/wizard
 COPY --from=builder /usr/src/monitor/ /usr/local/monitor
 
-RUN curl "https://iso.ava.do/my.ava.do.crt" --output /etc/nginx/my.ava.do.crt --silent
-RUN curl "https://iso.ava.do/my.ava.do.key" --output /etc/nginx/my.ava.do.key --silent
+# automatic certificate refresh
+COPY reload-certs.sh /opt/reload-certs.sh 
+RUN chmod +x /opt/reload-certs.sh 
+
+# RUN curl "https://iso.ava.do/my.ava.do.crt" --output /etc/nginx/my.ava.do.crt --silent
+# RUN curl "https://iso.ava.do/my.ava.do.key" --output /etc/nginx/my.ava.do.key --silent
 
 COPY supervisord.conf /etc/supervisord.conf
 COPY nginx.conf /etc/nginx/
