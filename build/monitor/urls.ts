@@ -49,7 +49,7 @@ export const getAvadoPackageName = (client: string, type: "beaconchain" | "valid
             switch (network) {
                 case "gnosis": return "teku-gnosis.avado.dnp.dappnode.eth"
                 case "goerli": return "teku-prater.avado.dnp.dappnode.eth"
-                case "mainnet": return "teku.avado.dnp.dappnode.eth"
+                default /*"mainnet"*/: return "teku.avado.dnp.dappnode.eth"
             }
         }
     }
@@ -59,7 +59,7 @@ export const getAvadoExecutionClientPackageName = (client: string) => {
     switch (client) {
         case "nethermind": {
             switch (network) {
-                case "gnosis": return "nethermind-gnosis..avado.dnp.dappnode.eth"
+                case "gnosis": return "nethermind-gnosis.avado.dnp.dappnode.eth"
                 case "goerli": return "nethermind-goerli.avado.dnp.dappnode.eth"
                 case "mainnet": return "avado-dnp-nethermind.avado.dnp.dappnode.eth"
             }

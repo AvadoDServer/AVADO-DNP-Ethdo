@@ -52,7 +52,7 @@ const Home: NextPage = () => {
                             <div className="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
                                 <div className="mt-2 flex items-center text-sm text-gray-500">
                                     <ServerIcon className="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
-                                    {ecClient},{bcClient}
+                                    {network}: {ecClient},{bcClient}
                                 </div>
                                 <div className="mt-2 flex items-center text-sm text-gray-500">
                                     <PlayIcon className="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
