@@ -1,1 +1,1 @@
-export type network = 'goerli'  | 'mainnet';
+export type network = 'goerli' | 'mainnet' | 'gnosis';

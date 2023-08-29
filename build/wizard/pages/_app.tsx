@@ -8,7 +8,7 @@ import { configureChains, createClient, mainnet, WagmiConfig } from 'wagmi';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { publicProvider } from 'wagmi/providers/public';
 import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
-import { goerli } from 'wagmi/chains'
+import { gnosis, goerli } from 'wagmi/chains'
 import { server_config } from '../server_config'
 import axios from 'axios';
 import { useEffect, useState } from 'react';
@@ -24,7 +24,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
       const { chains, provider, webSocketProvider } = configureChains(
         [
-          goerli, mainnet
+          goerli, mainnet, gnosis
         ],
         clientRpcs.map((client_rpc: any) =>
           jsonRpcProvider({
@@ -61,7 +61,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   }, []);
 
   return <>
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css"></link>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css"></link>
     {wagmiClient ? (
       <WagmiConfig client={wagmiClient}>
         <RainbowKitProvider chains={chains}>

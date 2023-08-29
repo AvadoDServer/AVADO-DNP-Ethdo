@@ -54,51 +54,6 @@ server.get("/name", (req: restify.Request, res: restify.Response, next: restify.
 
 const supervisorCtl = new SupervisorCtl(`localhost`, 5555, '/RPC2') || null;
 
-const restart = async () => {
-    await Promise.all([
-        supervisorCtl.callMethod('supervisor.stopProcess', ["nimbus", true]),
-    ])
-    return Promise.all([
-        supervisorCtl.callMethod('supervisor.startProcess', ["nimbus", true]),
-    ])
-}
-
-server.post("/service/restart", (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    restart().then((result) => {
-        res.send(200, "restarted");
-        return next()
-    }).catch((error) => {
-        res.send(500, "failed")
-        return next();
-    })
-});
-
-server.post("/service/stop", (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    const method = 'supervisor.stopProcess'
-    Promise.all([
-        supervisorCtl.callMethod(method, ["nimbus"]),
-    ]).then(result => {
-        res.send(200, "stopped");
-        next()
-    }).catch(err => {
-        res.send(200, "failed")
-        next();
-    })
-});
-
-server.post("/service/start", (req: restify.Request, res: restify.Response, next: restify.Next) => {
-    const method = 'supervisor.startProcess'
-    Promise.all([
-        supervisorCtl.callMethod(method, ["nimbus"]),
-    ]).then(result => {
-        res.send(200, "started");
-        next()
-    }).catch(err => {
-        res.send(200, "failed")
-        next();
-    })
-});
-
 server.get("/service/status", (req: restify.Request, res: restify.Response, next: restify.Next) => {
     const method = 'supervisor.getAllProcessInfo'
     supervisorCtl.callMethod(method, [])
