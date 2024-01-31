@@ -22,19 +22,24 @@ RUN apt-get -y update && apt-get -y upgrade && apt-get -y install \
     gettext\
     jq \
     nginx \
-    nodejs \
     procps \
     sudo \
     supervisor \
     vim-tiny \
+    iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 RUN useradd -s /bin/false nginx
 
-# Instal node v18.15.0
-RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash \
+RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash \
     && . /root/.nvm/nvm.sh \
     && nvm install v18.15.0 \
-    && nvm use v18.15.0
+    && nvm use v18.15.0 \
+    && nvm alias default v18.15.0
+
+RUN ln -s /bin/versions/node/v18.15.0/bin/node /bin/node
+RUN ln -s /bin/versions/node/v18.15.0/bin/npm /bin/npm
+
+RUN node -v
 
 # RUN mkdir /data  && chown user /data
 VOLUME /data
